@@ -80,6 +80,7 @@ public class TokenKind extends Term {
      */
     public static TokenKind fromString(String id) {
         if (allowed == null || !allowed.containsKey(id)) {
+            System.out.println(id);
             throw new RuntimeException("Illegal Identifier");
         }
 

@@ -42,61 +42,115 @@ public class LexicalAnalyzer {
      */
     public void run() {
         position = 0;
+        State state = State.START;
+        StringBuilder currentToken = new StringBuilder();
+
         while (position < sourceCode.length()) {
             char currentChar = sourceCode.charAt(position);
-            
-            if (Character.isWhitespace(currentChar)) {
-                position++;
-                continue;
-            }
 
-            if (Character.isLetter(currentChar) || currentChar == '_') {
-                processIdentifierOrKeyword();
-            } else if (Character.isDigit(currentChar)) {
-                processNumber();
-            } else {
-                processSymbol();
+            switch (state) {
+                case START:
+                    if (Character.isWhitespace(currentChar)) {
+                        position++;
+                    } else if (Character.isLetter(currentChar) || currentChar == '_') {
+                        state = State.IDENTIFIER;
+                        currentToken.append(currentChar);
+                        position++;
+                    } else if (Character.isDigit(currentChar)) {
+                        state = State.NUMBER;
+                        currentToken.append(currentChar);
+                        position++;
+                    } else if (currentChar == '*') {
+                        state = State.STAR;
+                        position++;
+                    } else if (currentChar == '=') {
+                        state = State.EQUAL;
+                        position++;
+                    } else {
+                        state = State.SYMBOL;
+                    }
+                    break;
+
+                case IDENTIFIER:
+                    if (Character.isLetterOrDigit(currentChar) || currentChar == '_') {
+                        currentToken.append(currentChar);
+                        position++;
+                    } else {
+                        addIdentifierOrKeyword(currentToken.toString());
+                        state = State.START;
+                        currentToken.setLength(0);
+                    }
+                    break;
+
+                case NUMBER:
+                    if (Character.isDigit(currentChar)) {
+                        currentToken.append(currentChar);
+                        position++;
+                    } else {
+                        addNumber(currentToken.toString());
+                        state = State.START;
+                        currentToken.setLength(0);
+                    }
+                    break;
+
+                case SYMBOL:
+                    addSymbol(currentChar);
+                    position++;
+                    state = State.START;
+                    break;
+
+                case STAR:
+                    if (currentChar == '*') {
+                        tokens.add(Token.simple(TokenKind.fromString("**")));
+                        position++;
+                    } else {
+                        tokens.add(Token.simple(TokenKind.fromString("*")));
+                    }
+                    state = State.START;
+                    break;
+
+                case EQUAL:
+                    if (currentChar == '=') {
+                        tokens.add(Token.simple(TokenKind.fromString("==")));
+                        position++;
+                    } else {
+                        tokens.add(Token.simple(TokenKind.fromString("=")));
+                    }
+                    state = State.START;
+                    break;
             }
+        }
+
+        // 处理最后一个token
+        if (state == State.IDENTIFIER) {
+            addIdentifierOrKeyword(currentToken.toString());
+        } else if (state == State.NUMBER) {
+            addNumber(currentToken.toString());
+        } else if (state == State.STAR || state == State.EQUAL){
+            throw new RuntimeException("Illegal end token");
         }
         tokens.add(Token.eof());
     }
 
-    private void processIdentifierOrKeyword() {
-        StringBuilder identifier = new StringBuilder();
-        while (position < sourceCode.length() && 
-               (Character.isLetterOrDigit(sourceCode.charAt(position)) || sourceCode.charAt(position) == '_')) {
-            identifier.append(sourceCode.charAt(position));
-            position++;
-        }
-        String word = identifier.toString();
-        if (TokenKind.isAllowed(word)){
+    private void addIdentifierOrKeyword(String word) {
+        if (TokenKind.isAllowed(word)) {
             tokens.add(Token.simple(TokenKind.fromString(word)));
-        }
-        else{
+        } else {
             tokens.add(Token.normal(TokenKind.fromString("id"), word));
             symbolTable.add(word);
         }
     }
 
-    private void processNumber() {
-        StringBuilder number = new StringBuilder();
-        while (position < sourceCode.length() && Character.isDigit(sourceCode.charAt(position))) {
-            number.append(sourceCode.charAt(position));
-            position++;
-        }
-        tokens.add(Token.normal(TokenKind.fromString("IntConst"), number.toString()));
+    private void addNumber(String number) {
+        tokens.add(Token.normal(TokenKind.fromString("IntConst"), number));
     }
 
-    private void processSymbol() {
-        char currentChar = sourceCode.charAt(position);
-        TokenKind kind = null;
-        if (currentChar == ';'){
+    private void addSymbol(char symbol) {
+        if (symbol == ';') {
             tokens.add(Token.simple(TokenKind.fromString("Semicolon")));
+        } else {
+            tokens.add(Token.simple(TokenKind.fromString(String.valueOf(symbol))));
         }
-        else{
-            tokens.add(Token.simple(TokenKind.fromString(String.valueOf(currentChar))));
-        }
-        position++;
     }
 
     /**
@@ -113,5 +167,9 @@ public class LexicalAnalyzer {
             path,
             StreamSupport.stream(getTokens().spliterator(), false).map(Token::toString).toList()
         );
+    }
+
+    private enum State {
+        START, IDENTIFIER, NUMBER, SYMBOL, STAR, EQUAL
     }
 }
