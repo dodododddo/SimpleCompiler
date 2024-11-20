@@ -137,7 +137,9 @@ public class LexicalAnalyzer {
             tokens.add(Token.simple(TokenKind.fromString(word)));
         } else {
             tokens.add(Token.normal(TokenKind.fromString("id"), word));
-            symbolTable.add(word);
+            if (!symbolTable.has(word)) {
+                symbolTable.add(word);
+            }
         }
     }
 

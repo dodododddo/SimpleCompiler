@@ -7,11 +7,14 @@ id_dict = {1: ["token.txt", "old_symbol_table.txt"], 2: ["parser_list.txt"], 3: 
     "ir_emulate_result.txt", "new_symbol_table.txt"], 4: ["assembly_language.asm"]}
 
 # 需要改为你自己的 rars.jar 路径
-rars_path = "/home/test/rars.jar"
+rars_path = "D:\organ\lab4\lab1-miniRV-asm\\rars1_6.jar"
 
 
 if __name__ == '__main__':
-    _, _lab_id, std_dir, out_dir = sys.argv
+    # _, _lab_id, std_dir, out_dir = sys.argv
+    _lab_id = 4
+    std_dir = "D:\\compiler\\template\\data\\std"
+    out_dir = "D:\\compiler\\template\\data\\out"
     lab_id = int(_lab_id)
 
     if lab_id <= 3:

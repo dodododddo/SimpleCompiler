@@ -42,7 +42,7 @@ public class SymbolTable {
             return entry;
         }
         else{
-            return entries.get(text);
+            throw new RuntimeException("符号 '" + text + "' 在符号表中已存在");
         }
     }
 
